@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AuthenticatedLayout from "@/layouts/authenticated-layout";
 import { Head } from "@inertiajs/react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -6,33 +6,29 @@ import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import axios from "axios";
-import { Plus } from "lucide-react";
+import { Plus } from 'lucide-react';
+
+// Define the shape of our data
+interface Barang {
+    id_barang: number;
+    nama_barang: string;
+    kategori: string;
+    stok_awal: number;
+    satuan: string;
+}
 
 export default function Dashboard() {
-    const initialData = [
-        { id_barang: 1, nama_barang: "Barang A", kategori: "sarana_prasarana", stok_awal: 20, satuan: "Unit" },
-        { id_barang: 2, nama_barang: "Barang B", kategori: "barang_habis_pakai", stok_awal: 15, satuan: "Unit" },
-    ];
-
-    const [data, setData] = useState(initialData);
+    const [data, setData] = useState<Barang[]>([]);
+    const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
         nama_barang: "",
         kategori: "",
@@ -40,7 +36,20 @@ export default function Dashboard() {
         satuan: "",
     });
 
-    const [loading, setLoading] = useState(false);
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        try {
+            const response = await axios.get<Barang[]>('/api/barang');
+            setData(response.data);
+            setLoading(false);
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            setLoading(false);
+        }
+    };
 
     // Handle input change
     const handleInputChange = (field: string, value: string) => {
@@ -56,7 +65,7 @@ export default function Dashboard() {
         setLoading(true);
 
         try {
-            const response = await axios.post("/api/barang", formData); // Adjust the API endpoint as necessary
+            const response = await axios.post<Barang>("/barang", formData);
             setData((prev) => [...prev, response.data]);
             setFormData({ nama_barang: "", kategori: "", stok_awal: "", satuan: "" }); // Reset the form
         } catch (error) {
@@ -66,12 +75,13 @@ export default function Dashboard() {
         }
     };
 
+
     return (
         <AuthenticatedLayout header="Dashboard">
             <Head title="Dashboard" />
             <div className="flex flex-1 flex-col gap-4 h-full">
                 <Card className="flex flex-1 flex-col gap-4 h-full">
-                    <CardHeader className="flex justify-between items-center">
+                    <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>Data Barang</CardTitle>
                             <CardDescription>List inventory data barang.</CardDescription>
@@ -149,42 +159,46 @@ export default function Dashboard() {
                         </Dialog>
                     </CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>ID</TableHead>
-                                    <TableHead>Nama Barang</TableHead>
-                                    <TableHead>Kategori</TableHead>
-                                    <TableHead>Stok</TableHead>
-                                    <TableHead>Satuan</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {data.length > 0 ? (
-                                    data.map((item) => (
-                                        <TableRow key={item.id_barang}>
-                                            <TableCell>{item.id_barang}</TableCell>
-                                            <TableCell>{item.nama_barang}</TableCell>
-                                            <TableCell>{item.kategori}</TableCell>
-                                            <TableCell>{item.stok_awal}</TableCell>
-                                            <TableCell>{item.satuan}</TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
+                        {loading ? (
+                            <div>Loading...</div>
+                        ) : (
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center">
-                                            Tidak ada data.
-                                        </TableCell>
+                                        <TableHead>ID</TableHead>
+                                        <TableHead>Nama Barang</TableHead>
+                                        <TableHead>Kategori</TableHead>
+                                        <TableHead>Stok</TableHead>
+                                        <TableHead>Satuan</TableHead>
                                     </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {data.length > 0 ? (
+                                        data.map((item: any) => (
+                                            <TableRow key={item.id_barang}>
+                                                <TableCell>{item.id_barang}</TableCell>
+                                                <TableCell>{item.nama_barang}</TableCell>
+                                                <TableCell>{item.kategori}</TableCell>
+                                                <TableCell>{item.stok_awal}</TableCell>
+                                                <TableCell>{item.satuan}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-center">
+                                                Tidak ada data.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        )}
                     </CardContent>
                 </Card>
-                
-                <div className="flex-1 rounded-xl"/>
+
+                <div className="flex-1 rounded-xl" />
             </div>
-            
+
         </AuthenticatedLayout>
     );
 }
