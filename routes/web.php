@@ -23,5 +23,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+Route::get('/inventory-barang', function () {
+    return Inertia::render('barang/data'); // Corresponds to `resources/pages/barang/data.tsx`
+})->name('barang.data');
+
 
 require __DIR__.'/auth.php';
